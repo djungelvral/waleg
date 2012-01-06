@@ -1,0 +1,1 @@
+../ext/node-icalendar/lib/icalendar.js

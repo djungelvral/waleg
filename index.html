@@ -10,8 +10,78 @@
     td > input { margin-left: 1em; }
     </style>
     <script type="text/javascript" src="http://www.google.com/jsapi?key=AIzaSyC9lKLqnXY1LvMiwM-TY-irkN91O-msSHk"></script>
-    <script type="text/javascript" src="gcal.js" charset="utf-8"></script>
-    <script type="text/javascript" src="jquery-1.7.1.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/gcal.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery-1.7.1.min.js" charset="utf-8"></script>
+    <!-- // <script type="text/javascript" src="js/require.js" charset="utf-8"></script> -->
+    <!-- <script type="text/javascript" src="js/assert.js" charset="utf-8"></script> -->
+    <!-- <script type="text/javascript" charset="utf-8">
+    /**
+     * Adds all missing properties from second obj to first obj
+     */ 
+    window.inherits = function(first, second){
+        for (var prop in second){
+            first[prop] = second[prop];
+        }
+    }
+    // // patch browser to CommonJS, from https://github.com/alexyoung/turing-test.js/blob/master/turing-test.js
+    // window.browserPaths = [];
+    // window.load = function(script, eval) {
+    //     if (!script.match(/\.js$/)) {
+    //         script = script + '.js';
+    //     }
+    // 
+    //     if (!script.match(/\//)) {
+    //         script = window.browserPaths[0] + '/' + script;
+    //         script = script.replace(/\.\//, '');
+    //     }
+    // 
+    //     function loadIEScript() {
+    //         var id = '__id_' + (new Date()).valueOf(),
+    //             timer,
+    //             scriptTag;
+    //         // document.write('<script id="' + id + '" type="text/javascript" src="' + script + '">');
+    //         document.write('<script id="' + id + '" type="text/javascript" src="' + script + '" />');
+    //         scriptTag = document.getElementById(id);
+    // 
+    //         timer = setInterval(function() {
+    //                 if (/loaded|complete/.test(scriptTag.readyState)) {
+    //                     clearInterval(timer);
+    //                 }
+    //             }, 10);
+    //     }
+    // 
+    //     function loadOtherScript() {
+    //         var scriptTag = document.createElement('script'),
+    //         head = document.getElementsByTagName('head');
+    //         // scriptTag.onload = function() { tt.doneLoading(); };
+    //         scriptTag.setAttribute('type', 'text/javascript');
+    //         scriptTag.setAttribute('src', script);
+    //         head[0].insertBefore(scriptTag, head.firstChild);
+    //     }
+    // 
+    //     if (document.attachEvent) {
+    //         loadIEScript();
+    //     } else {
+    //         loadOtherScript();
+    //     }
+    // }
+    // window.exports = [];
+    // window.__dirname = '';
+    // 
+    // window.require = function(path) {
+    //     exports = {};
+    //     window.load(path);
+    // 
+    //     return {};
+    // }
+    // 
+    // window.require.paths = {
+    //     unshift: function(path) {
+    //         window.browserPaths.push(path);
+    //     }
+    // }
+    </script> -->
+    <!-- // <script type="text/javascript" src="js/icalendar.js" charset="utf-8"></script> -->
     <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
         var letterbullets = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
@@ -46,7 +116,7 @@
         $("#urlinput").click(function(){ $(this).select(); return false; });
         $('input#urlsubmit').click(function(){
             if (google.accounts.user.checkLogin(EVENT_FEED_URL)) {
-            $('input#addall').attr('disabled', 'disabled');
+            $('input#add-to-google').attr('disabled', 'disabled');
             $('div#container').load(proxify($('#urlinput').val()), function() {
                 console.log(proxify($('#urlinput').val()));
                 // Get timetable at top of page
@@ -97,14 +167,22 @@
                     }
                 });
                 // Add button to submit checked events to calendar
-                $('input#addall').click(function(){
+                $('input#add-to-google').click(function(){
                     // Get list of checked events
                     $timetable.find("input:checked").each(function(){
                         var i = $(this).val();
                         myCalendar.addEvent(events[i].startdate, events[i].enddate, events[i].title, events[i].details, events[i].location);
                     });
                 });
-                $('input#addall').removeAttr('disabled');
+                // Add button to submit checked events to calendar
+                $('input#add-to-ics').click(function(){
+                    // Get list of checked events
+                    $timetable.find("input:checked").each(function(){
+                        var i = $(this).val();
+                        myCalendar.addEvent(events[i].startdate, events[i].enddate, events[i].title, events[i].details, events[i].location);
+                    });
+                });
+                $('input#add-to-google').removeAttr('disabled');
             });
         }
         });
@@ -119,7 +197,7 @@
     <div id="topbar" style="width:90%;">
         <input name="urlinput" id="urlinput" style="width:100%;" value="http://listserv.wa.gov">
         <input type="submit" name="urlsubmit" id="urlsubmit" value="Load URL">
-        <input type="submit" name="addall" id="addall" value="Add Checked Events" disabled="disabled">
+        <input type="submit" name="add-to-google" id="add-to-google" value="Add Checked Events to Google Calendar" disabled="disabled">
     </div>
     <div id="authenticated-pane" style="display:none;height:90%;width:90%;">
         <input id="logout-button" type="button" value="Logout Google Calendar" onclick="logMeOut()">

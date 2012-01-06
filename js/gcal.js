@@ -29,7 +29,7 @@ function cal_init() {
     if (google.accounts.user.checkLogin(EVENT_FEED_URL)) {
         document.getElementById(DEFAULT_PANE).style.display = "none";
         document.getElementById(AUTHENTICATED_PANE).style.display = "block";
-        myCalendar = new oCal()
+        myCalendar = new oCal();
         // getEvents();
     } else {
         document.getElementById(DEFAULT_PANE).style.display = "block";
