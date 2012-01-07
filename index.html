@@ -3,15 +3,27 @@
 <head>
     <meta charset="utf-8">
     <title>Calendar Parser</title>
+    <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
     <style type="text/css" media="screen">
-    html,body{height:100%;margin:0;padding:0;}
-    tr:nth-child(odd)    { background-color:#eee; }
-    tr:nth-child(even)    { background-color:#fff; }
-    td > input { margin-left: 1em; }
+/*        html,body{height:100%;margin:0;padding:0;}*/
+/*        #container {width:96%;margin:2%;}*/
+        #authenticated-pane{display:none;margin:20px;padding-right:290px;}
+        #default-pane{color:red;}
+        #topbar{margin:20px;padding-right:290px;}
+        #urlinput{width:98%;}
+        #previewpane{position:fixed;top:0px;bottom:0px;right:0px;width:290px;border-left:3px solid #111;box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);}
+    	#previewpane h3 {padding:10px;line-height:1.5em;background-color:#F5F5F5;border-bottom: 1px solid #EEEEEE;}
+    	#previewpane .content {padding:10px;}
+        tr:nth-child(odd)    { background-color:#eee; }
+        tr:nth-child(even)    { background-color:#fff; }
+        td > input { margin-left: 1em; }
+        .popover .inner { width: 450px; }
     </style>
     <script type="text/javascript" src="http://www.google.com/jsapi?key=AIzaSyC9lKLqnXY1LvMiwM-TY-irkN91O-msSHk"></script>
     <script type="text/javascript" src="js/gcal.js" charset="utf-8"></script>
     <script type="text/javascript" src="js/jquery-1.7.1.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/bootstrap-twipsy.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/bootstrap-popover.js" charset="utf-8"></script>
     <!-- // <script type="text/javascript" src="js/require.js" charset="utf-8"></script> -->
     <!-- <script type="text/javascript" src="js/assert.js" charset="utf-8"></script> -->
     <!-- <script type="text/javascript" charset="utf-8">
@@ -118,7 +130,7 @@
             if (google.accounts.user.checkLogin(EVENT_FEED_URL)) {
             $('input#add-to-google').attr('disabled', 'disabled');
             $('div#container').load(proxify($('#urlinput').val()), function() {
-                console.log(proxify($('#urlinput').val()));
+                // console.log(proxify($('#urlinput').val()));
                 // Get timetable at top of page
                 var $timetable = $('a[name="top"]').siblings('table').eq(0);
                 var events = new Array;
@@ -152,18 +164,40 @@
                         var eventid = ($cells.eq(1).find('a[href]').attr('href') || "").substr(1);
                         if(eventid!="") {
                             // Get details
-                            var $details = $('a[name='+eventid+']').next('span').next('div').find('b').eq(1).nextAll().andSelf();
+                            var $detailsnode = $('a[name='+eventid+']').next('span').next('div').clone();
+                            // Wrap all the textnodes in span tags, in order to get them to show up as html nodes later
+                            $detailsnode.contents().filter(function() {return this.nodeType == 3;}).wrap('<span></span>');
+                            var $details = $detailsnode.find('b').eq(1).nextAll().andSelf();
+                            // Parse lists in details
                             $details.filter('ol').each(function(){
                                 $(this).text(ol2txt(this,0,1,"\n"));
                             });
+                            // Replace <br> elems in details with newlines
+                            $details.filter('br').each(function(){
+                                $(this).replaceWith("<span></span>").text("\n");
+                            });
                             theevent.details = $details.text();
+                            // Remove trailing newlines
+                            theevent.details = theevent.details.replace(/\n+$/,"");
+                            // Replace multiple consecutive newlines with a single newline
+                            // theevent.details = theevent.details.replace(/\n+/g,"\n")
                             theevent.eventid = eventid;
+                            // Add tooltip with details to entry in the schedule
+                            $(this).attr({"data-original-title":theevent.title, "data-content":(theevent.details).replace(/\n/g, "<br>")});
+                            // $(this).popover({"placement":"above","html":true});
+                            $(this).hover(function(){
+                                $("#previewpane > h3").text($(this).attr("data-original-title"));
+                                $("#previewpane > .content").html($(this).attr("data-content"));
+                            },function(){
+                                $("#previewpane > h3").text("");
+                                $("#previewpane > .content").html("");
+                            });
                         }
                         // Add event to list
                         events.push(theevent);
                         // Add checkbox to row
-                        $(this).append('<td><input type="checkbox" name="event" value="'+(events.length-1)+'" checked="checked"></td>');
-                        // $(this).append('<td><input type="checkbox" name="event" value="'+(events.length-1)+'"></td>');
+                        // $(this).append('<td><input type="checkbox" name="event" value="'+(events.length-1)+'" checked="checked"></td>');
+                        $(this).append('<td><input type="checkbox" name="event" value="'+(events.length-1)+'"></td>');
                     }
                 });
                 // Add button to submit checked events to calendar
@@ -194,18 +228,24 @@
 </script>
 </head>
 <body>
-    <div id="topbar" style="width:90%;">
-        <input name="urlinput" id="urlinput" style="width:100%;" value="http://listserv.wa.gov">
-        <input type="submit" name="urlsubmit" id="urlsubmit" value="Load URL">
-        <input type="submit" name="add-to-google" id="add-to-google" value="Add Checked Events to Google Calendar" disabled="disabled">
-    </div>
-    <div id="authenticated-pane" style="display:none;height:90%;width:90%;">
-        <input id="logout-button" type="button" value="Logout Google Calendar" onclick="logMeOut()">
-        <div id="container" style="height:90%;width:90%;margin:5%;"></div>
-    </div>
-    <div id="default-pane" style="color:red;">
-        Need to login first: <input id="auth-button" type="button" value="Login Google Calendar" onclick="logMeIn()">
-    </div>
-    <img src="x.png" style="position:absolute; top: -1000px;">
+    <!-- <div class="container"> -->
+        <div id="topbar">
+            <p><input name="urlinput" id="urlinput" value="http://listserv.wa.gov"></p>
+            <p><input class="btn" type="submit" name="urlsubmit" id="urlsubmit" value="Load URL">
+            <input class="btn" type="submit" name="add-to-google" id="add-to-google" value="Add Checked Events to Google Calendar" disabled="disabled"></p>
+        </div>
+        <div id="authenticated-pane">
+            <input class="btn" id="logout-button" type="button" value="Logout Google Calendar" onclick="logMeOut()">
+            <div id="container"></div>
+            <div id="previewpane">
+                <h3></h3>
+                <div class="content"></div>
+            </div>
+        </div>
+        <div id="default-pane">
+            Need to login first: <input class="btn" id="auth-button" type="button" value="Login Google Calendar" onclick="logMeIn()">
+        </div>
+        <img src="x.png" style="position:absolute; top: -1000px;">
+    <!-- </div> -->
 </body>
 </html>
