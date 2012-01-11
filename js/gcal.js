@@ -27,13 +27,17 @@ var myCalendar;
 function cal_init() {
     google.gdata.client.init(handleError);
     if (google.accounts.user.checkLogin(EVENT_FEED_URL)) {
-        document.getElementById(DEFAULT_PANE).style.display = "none";
-        document.getElementById(AUTHENTICATED_PANE).style.display = "block";
+        $(".authenticated-pane").show();
+        $(".default-pane").hide();
+        // document.getElementById(DEFAULT_PANE).style.display = "none";
+        // document.getElementById(AUTHENTICATED_PANE).style.display = "block";
         myCalendar = new oCal();
         // getEvents();
     } else {
-        document.getElementById(DEFAULT_PANE).style.display = "block";
-        document.getElementById(AUTHENTICATED_PANE).style.display = "none";
+        $(".authenticated-pane").hide();
+        $(".default-pane").show();
+        // document.getElementById(DEFAULT_PANE).style.display = "block";
+        // document.getElementById(AUTHENTICATED_PANE).style.display = "none";
     } 
 };
 
@@ -67,7 +71,7 @@ var oCal = function() {
     var myService;
     var updater = {};
 
-    var calendarID = '7avurtt2fc22evj7vsgk6n2g9o@group.calendar.google.com'; // = 'default'
+    var calendarID = 'jo3k2rkstlil6nl37nkd5s137o@group.calendar.google.com'; // = 'default'
     var feedUri = 'https://www.google.com/calendar/feeds/'+calendarID+'/private/full';
 
     // function setupMyService() {
