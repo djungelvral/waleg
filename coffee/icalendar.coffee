@@ -280,6 +280,12 @@
 		DURATION: {
 			type: 'DURATION'
 		},
+		TZOFFSETFROM: {
+			type: 'UTC-OFFSET'
+		},
+		TZOFFSETTO: {
+			type: 'UTC-OFFSET'
+		},
 		RRULE: {
 			type: 'RECUR'
 		},

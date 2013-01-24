@@ -4,33 +4,7 @@
     <meta charset="utf-8">
     <title>Calendar Parser</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
-    <style type="text/css" media="screen">
-        body { font-size: 9pt; font-family: Arial, Helvetica, sans-serif;}
-        h1, .h1, h2, .h2, h3, .h3, h4, .h4 { font-weight: bold; margin: 0px 0px 0px 0px; padding: 0px;}
-        h1, .h1 { font-size: 14pt; margin-bottom: 10px;}
-        h2, .h2 { font-size: 11pt;}
-        h3, .h3 { font-size: 9pt; }
-        h4, .h4 { font-size: 7pt; }
-        h1 span { margin-left: 10em; }
-        authenticated-pane{display:none;}
-        div#content, div.default-pane {margin:20px;}
-        div#content{padding-right:290px;}
-        .default-pane{color:red;}
-        #topbar{margin:20px;padding-right:290px;}
-        #urlinput{width:98%;}
-        #previewpane {position:fixed;top:0px;right:0px;width:290px;height:100%;border-left:3px solid #111;box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);overflow:hidden;z-index: 900;}
-        #previewpane.debug {height:50%;}
-        #previewpane2 {display:none;position:fixed;bottom:0px;right:0px;width:290px;height:50%;border-left:3px solid #111;box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);overflow:auto;}
-        #previewpane2.debug {display:block;}
-    	#previewpane h3 {position:relative;padding:10px;line-height:1.5em;background-color:#F5F5F5;border-bottom: 1px solid #EEEEEE;z-index:1000;}
-    	#previewpane h4, #previewpane2 h4 {position:relative;padding:5px 10px;line-height:1em;background-color:#F5F5F5;border-bottom: 1px solid #EEEEEE;box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);z-index:800;}
-    	#previewpane .content, #previewpane2 .content {position:absolute;top:0px;left:0px;right:0px;bottom:0px;overflow:auto;padding:10px;}
-        tr:nth-child(odd)    { background-color:#eee; }
-        tr:nth-child(even)    { background-color:#fff; }
-        tr.active   { background-color: #ddd; }
-        input[type="checkbox"] { margin-left: 1em; }
-        label { width: auto; display: inline; float: none; }
-    </style>
+    <link rel="stylesheet" href="css/legislature.css">
     <script type="text/javascript" src="http://www.google.com/jsapi?key=AIzaSyC9lKLqnXY1LvMiwM-TY-irkN91O-msSHk"></script>
     <script type="text/javascript" src="js/gcal.js" charset="utf-8"></script>
     <script type="text/javascript" src="js/jquery-1.7.1.min.js" charset="utf-8"></script>
@@ -41,237 +15,29 @@
     <script type="text/javascript" src="js/types.js" charset="utf-8"></script>
     <!-- <script type="text/javascript" src="js/parser.js" charset="utf-8"></script> -->
     <script type="text/coffeescript" src="coffee/icalendar.coffee" charset="utf-8"></script>
-    <script type="text/javascript" charset="utf-8">
-    $(document).ready(function() {
-        var debug = false;
-        if(debug){$('#previewpane,#previewpane2').addClass('debug');}
-        var letterbullets = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-        function ol2txt(obj,level,ndx,str) {
-            if($(obj).length>1) {
-                console.log('Error: multiple objects passed to ol2txt');
-                return;
-            }
-            if($(obj).eq(0).is('ol')){
-                // If node has children, recurse on all its children
-                str += "\n";
-                $(obj).children().each(function(i){
-                    str += ol2txt($(this),level,i,"");
-                });
-            } else if($(obj).eq(0).is('li')) {
-                // If node is an li, print it as text
-                str += new Array(level+1).join("  ");
-                if((level%2)==0) {
-                    str += (ndx+1)+". ";
-                } else {
-                    str += "  "+letterbullets[ndx]+". ";
-                }
-                $(obj).contents().each(function(){
-                    str += ol2txt(this,level+1,0,"");
-                });
-                str += "\n";
-            } else {
-                // Print node as text
-                str += $(obj).text();
-            }
-            return str;
-        }
-        function formatDate(d) {
-            var d_names = new Array("Sun","Mon","Tues","Wed","Thur","Fri","Sat");
-            var m_names = new Array("Jan","Feb","Mar","Apr","May","June","July","Aug","Sept","Oct","Nov","Dec");
-            var hrs = d.getHours();
-            var ampm = (hrs>12) ? "pm" : "am";
-            if(hrs>12){hrs -= 12;}
-            var mins = d.getMinutes().toString();
-            if(mins.length==1){mins="0"+mins;}
-            return d_names[d.getDay()]+" "+m_names[d.getMonth()]+" "+d.getDate()+" "+d.getFullYear()+" at "+hrs+":"+mins+" "+ampm;
-        }
-        function proxify(str) { return ("proxy.php?url="+encodeURIComponent(str)); }
-        $("#urlinput").click(function(){ $(this).select(); return false; });
-        $('input#add-to-google').attr('disabled', 'disabled');
-        $('input#add-to-ical').attr('disabled', 'disabled');
-        $('input#urlsubmit').click(function(){
-            $('div#container').hide();
-            $('div#container').before('<p id="loading" style="margin:1em 0;">Loading <img src="images/loading.gif" alt="spinner" style="vertical-align:top;"></p>');
-			var proxyurl = proxify($('#urlinput').val());
-			// var proxyurl = 'wa.html';
-            $('div#container').load(proxyurl, function() {
-                // console.log(proxify($('#urlinput').val()));
-                // Remove header saying Content-Type: text/html
-                $(this).contents().eq(0).filter(function() { return this.nodeType == 3 && this.nodeValue.search(/^Content-Type/i) >= 0; }).remove();
-                // Remove internal style in the loaded page
-                $(this).children('style').remove();
-                // Get timetable at top of page
-                var $timetable = $('a[name="top"]').siblings('table').eq(0);
-                var events = new Array;
-                var startdate, enddate, datestr, timestr;
-                $('h1').eq(0).append('<span><label for="all-events"><strong>Select / de-select all:</strong> </label><input type="checkbox" id="all-events" value="all" checked="checked"></span>');
-                // $timetable.children('tbody').prepend('<tr id="selectall"><th colspan="2"></th><th style="text-align:right;">Select / de-select all:</th><th><input type="checkbox" id="all-events" value="all"></th></tr>');
-                $('#all-events').click(function(){
-                    var $checkboxes = $("input[name='event'],input[name='day']");
-                    if($(this).attr("checked")) {
-                        $checkboxes.attr("checked","checked");
-                    } else {
-                        $checkboxes.removeAttr("checked");
-                    }
-                });
-                var $rows = $timetable.find('tr');
-                $rows.each(function(rownum){
-                    var $row = $(this);
-                    if($row.attr('id') == 'selectall') { return }
-                    if($row.children('th').length > 0) {
-                        $row.append('<th/>');
-                        return;
-                    }
-                    var $cells = $row.children('td');
-                    if($cells.length==0) { return; } // No td children means row only contains th cells
-                    // If this row has a multicolumn cell, it might be the date row
-                    if($cells.eq(0).attr('colspan')) {
-                        // If the cell says "Back to Top", it's not the date
-                        if($cells.eq(0).text().match(/Back to Top/i)) { return; }
-                        // Otherwise it should be the date
-                        datestr = $cells.eq(0).text();
-                        var dateid = (new Date(datestr)).toString();
-                        $cells.eq(0).attr('colspan',2);
-                        $row.append('<td style="text-align:right;"><label for="'+dateid+'">Select / de-select this day:</label></td><td><input type="checkbox" name="day" checked="checked" id="'+dateid+'"></td>');
-                        $row.find('input').click(function(){
-                            var checkboxdate = $row.attr('data-date');
-                            var $checkboxes = $("tr[data-date='"+checkboxdate+"'] input[name='event']");
-                            if($(this).attr("checked")) {
-                                $checkboxes.attr("checked","checked");
-                            } else {
-                                $checkboxes.removeAttr("checked");
-                            }
-                        });
-                    } else {
-                        // Get time if present
-                        timestr = $cells.eq(0).text();
-                        if(timestr.length>0) {
-                            startdate = new Date(datestr+", "+timestr);
-                            enddate = new Date(startdate);
-                            enddate.setHours(enddate.getHours()+2);
-                        }
-                        // Get title
-                        var titlestr = $cells.eq(1).text();
-                        // Swap (S) (H) (J) to front of title, if present
-                        var bits = titlestr.match(/(.*)\((S|H|J)\)/);
-                        if(bits && bits.length>=3) { titlestr = "("+bits[2]+")"+" "+bits[1]; }
-                        // Get location
-                        var locstr = $cells.eq(2).text();
-                        var theevent = {title:titlestr, location:locstr, startdate:startdate, enddate:enddate};
-                        // If the event has links to a lower part of the page with a number, it has additional details we can get
-                        var eventid = ($cells.eq(1).find('a[href]').attr('href') || "").substr(1);
-                        if(eventid!="") {
-                            // Get details
-                            var $detailsnode = $('a[name='+eventid+']').next('span').next('div').clone();
-                            // Wrap all the textnodes in span tags, in order to get them to show up as html nodes later
-                            $detailsnode.contents().filter(function() {return this.nodeType == 3;}).wrap('<span></span>');
-                            var $details = $detailsnode.find('b').eq(1).nextAll().andSelf();
-                            // Parse lists in details
-                            $details.filter('ol').each(function(){
-                                $(this).text(ol2txt(this,0,1,"\n"));
-                            });
-                            // Replace <br> elems in details with newlines
-                            $details.filter('br').each(function(){
-                                $(this).replaceWith("<span></span>").text("\n");
-                            });
-                            theevent.details = $details.text();
-                            // Remove trailing newlines
-                            theevent.details = theevent.details.replace(/\n+$/,"");
-                            // Replace multiple consecutive newlines with a single newline
-                            theevent.details = theevent.details.replace(/\n\n\n+/g,"\n")
-                            theevent.eventid = eventid;
-                            // Add tooltip with details to entry in the schedule
-                            $row.attr({"data-original-title":theevent.title, "data-content":(theevent.details).replace(/\n/g,"<br>").replace(/<br>  /g,"<br>&nbsp;&nbsp;"), "data-location":theevent.location, "data-startdate":theevent.startdate});
-                            $row.hover(function(){
-                                $rows.removeClass('active');
-                                $(this).addClass('active');
-                                $("#previewpane > h3").text($(this).attr("data-original-title"));
-                                $("#previewpane > h4").text(formatDate(new Date($(this).attr("data-startdate")))+" in "+$(this).attr("data-location"));
-                                $("#previewpane > .content").html($(this).attr("data-content"))
-                                                            .css({'top':$("#previewpane > h3").outerHeight()+$("#previewpane > h4").outerHeight()});
-                                if(debug){ $("#previewpane2 > .content").html($('a[name='+eventid+']').next('span').next('div').html()).css({'top':$("#previewpane2 > h4").outerHeight()}); }
-                            },function(){
-                                // $(this).removeClass('active');
-                                // $("#previewpane > h3").text("");
-                                // $("#previewpane > .content").html("");
-                            });
-                        }
-                        // Add event to list
-                        events.push(theevent);
-                        // Add checkbox to row
-                        $row.append('<td><input type="checkbox" name="event" value="'+(events.length-1)+'" checked="checked"></td>');
-                        // $row.append('<td><input type="checkbox" name="event" value="'+(events.length-1)+'"></td>');
-                    }
-                    $row.attr('data-date',datestr);
-                });
-                // Add button to submit checked events to calendar
-                $('input#add-to-google').click(function(){
-                    // Get list of checked events
-                    $timetable.find("input[name='event']:checked").each(function(){
-                        var i = $(this).val();
-                        myCalendar.addEvent(ISODateString(events[i].startdate), ISODateString(events[i].enddate), events[i].title, events[i].details, events[i].location);
-                    });
-                });
-                // Add button to submit checked events to calendar
-                $('input#add-to-ical').click(function(){
-					var ical = new icalendar.iCalendar();
-					var tz = new icalendar.VTimezone(null, 'America/Los_Angeles');
-					ical.addComponent(tz);
-					var dst = tz.addComponent('DAYLIGHT');
-					dst.addProperty('DTSTART', new Date(2007,2,11,2,0,0));
-					dst.addProperty('RRULE', new icalendar.RRule({FREQ: 'YEARLY', BYMONTH: 3, BYDAY: '2SU'}));
-					dst.addProperty('TZOFFSETFROM', -800);
-					dst.addProperty('TZOFFSETTO', -700);
-					dst.addProperty('TZNAME', 'PDT');
-					var std = tz.addComponent('STANDARD');
-					std.addProperty('DTSTART', new Date(2007,10,4,2,0,0));
-					std.addProperty('RRULE', new icalendar.RRule({FREQ: 'YEARLY', BYMONTH: 11, BYDAY: '1SU'}));
-					std.addProperty('TZOFFSETFROM', -700);
-					std.addProperty('TZOFFSETTO', -800);
-					std.addProperty('TZNAME', 'PST');
-					// var tz = ical.addComponent('VTIMEZONE');
-                    // Get list of checked events
-                    $timetable.find("input[name='event']:checked").each(function(){
-                        var i = $(this).val();
-						var event = ical.addComponent('VEVENT');
-						event.setDate(new Date(events[i].startdate), new Date(events[i].enddate), 'America/Los_Angeles');
-						event.setDescription(events[i].details);
-						event.setSummary(events[i].title);
-						event.setLocation(events[i].location);
-                        // myCalendar.addEvent(events[i].startdate, events[i].enddate, events[i].title, events[i].details, events[i].location);
-                    });
-					// Download file using data URI
-					$('#download-ical').remove(); // Delete existing link if present
-	                $('<a id="download-ical" type="text/calendar">Download iCal file</a>').attr('href','data:text/calendar;charset=UTF-8,'+ical.toString()).appendTo('#topbar');
-					window.location.href='data:text/calendar;charset=UTF-8,'+ical.toString();
-					// console.log(decodeURIComponent(ical));
-					// window.open('data:text/plain;charset=UTF-8,'+ical.toString(),'_blank','height=1200,width=1200');
-                });
-                $('input#add-to-google').removeAttr('disabled');
-                $('input#add-to-ical').removeAttr('disabled');
-                $('#loading').remove();
-                $('div#container').fadeIn('slow');
-            });
-        });
-        // Initialise calendar functionality
-        cal_init();
-        // For now, automatically trigger the click
-        // $('input#urlsubmit').click();
-    });
-</script>
+    <script type="text/javascript" src="js/legislature.js" charset="utf-8"></script>
 </head>
 <body>
     <!-- <div class="container"> -->
         <div id="topbar">
-            <p><input name="urlinput" id="urlinput" value="http://listserv.wa.gov"></p>
-            <!-- <p><input name="urlinput" id="urlinput" value="http://listserv.wa.gov/cgi-bin/wa?A3=ind1201&L=WALEG-SCHEDULE&E=base64&P=49857&B=----boundary_0_a7a0a1c2-ad48-4679-8e75-3bcf29aa12e1&T=text%2Fhtml;%20charset=utf-8&XSS=3#17484"></p> -->
+		    <ul class="breadcrumb">
+			    <li id="breadcrumb-archive"><a href="#" onclick="return false;">WA-LEG-ARCHIVE</a><ul class="unstyled" id="breadcrumb-archive-list"></ul></li>
+			    <li id="breadcrumb-month"> <span class="divider">/</span> <a href="#" onclick="return false;">January 1900</a><ul class="unstyled" id="breadcrumb-month-list"></ul></li>
+			    <li id="breadcrumb-message" class="active"> <span class="divider">/</span> <a>Legislative Meeting Schedule for 1/10</a><ul class="unstyled" id="breadcrumb-message-list"></ul></li>
+		    </ul>
+			<form>
+            <p id="urlinput-p" class="input-append clearfix">
+				<input name="urlinput" id="urlinput" value="http://listserv.wa.gov">
+				<span class="add-on btn" id="urlsubmit">Load Message</span>
+			</p>
             <p>
-                <input class="btn" type="submit" name="urlsubmit" id="urlsubmit" value="Load URL">
-                <input class="btn" type="button" name="add-to-ical" id="add-to-ical" value="Download Checked Events for iCal" disabled="disabled">
-                <input class="btn authenticated-pane" type="button" name="add-to-google" id="add-to-google" value="Add Checked Events to Google Calendar" disabled="disabled">
+                <span class="btnbox"><input class="btn" type="button" name="add-to-ical" id="add-to-ical" value="Create iCal File for Checked Events" disabled="disabled"></span>
+                <span class="btnbox"><input class="btn" type="button" name="add-to-text" id="add-to-text" value="Create Text File for Checked Events" disabled="disabled"></span>
+                <span class="btnbox"><input class="btn authenticated-pane" type="button" name="add-to-google" id="add-to-google" value="Add Checked Events to Google Calendar" disabled="disabled"></span>
                 <input class="btn authenticated-pane" id="logout-button" type="button" value="Logout Google Calendar" onclick="logMeOut()">
-				<input class="btn" id="auth-button" type="button" value="Login Google Calendar" onclick="logMeIn()">
+				<input class="btn default-pane" id="auth-button" type="button" value="Login Google Calendar" onclick="logMeIn()">
             </p>
+			</form>
         </div>
         <div id="content">
             <div id="container"></div>
@@ -281,7 +47,7 @@
                 <div class="content"></div>
             </div>
             <div id="previewpane2">
-                <h4>Info retrieved from email:</h4>
+                <h4>Info as it appears in email:</h4>
                 <div class="content"></div>
             </div>
         </div>

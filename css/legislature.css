@@ -1,0 +1,39 @@
+body { font-size: 9pt; font-family: Arial, Helvetica, sans-serif;}
+h1, .h1, h2, .h2, h3, .h3, h4, .h4 { font-weight: bold; margin: 0px 0px 0px 0px; padding: 0px;}
+h1, .h1 { font-size: 14pt; margin-bottom: 10px;}
+h2, .h2 { font-size: 11pt;}
+h3, .h3 { font-size: 9pt; }
+h4, .h4 { font-size: 7pt; }
+h1 span { margin-left: 10em; }
+authenticated-pane{display:none;}
+div#content, div.default-pane {margin:20px;}
+div#content{padding-right:290px;}
+.default-pane{color:red;}
+#topbar{margin:20px;padding-right:290px;}
+#topbar .breadcrumb {margin-bottom:9px;}
+#topbar .breadcrumb > li {position:relative;}
+#topbar .breadcrumb > li.active > a {text-decoration: none;}
+#topbar .breadcrumb > li > ul{display:none;text-align:left;position:absolute;left:0;top:12px;background-color:#F5F5F5;z-index:100;}
+#topbar .breadcrumb > li > ul > li{display:block;margin:5px;}
+#topbar .breadcrumb > li > ul > li > a{display:block;line-height:1.25em;}
+#breadcrumb-month, #breadcrumb-message { display:none; }
+#breadcrumb-archive-list {width:150px;}
+#breadcrumb-month-list {width:250px;}
+#topbar p {position:relative;display:block;margin-bottom:9px;}
+#urlinput-p{padding-right:110px;}
+#urlinput{display:inline-block;width:100%;}
+#urlsubmit{width:100px;position:absolute;right:0px;}
+#topbar .btnbox {position:relative;}
+.button-action-link {position:absolute;top:2em;left:0em;}
+#previewpane {position:fixed;top:0px;right:0px;width:290px;height:100%;border-left:3px solid #111;box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);overflow:hidden;z-index: 900;}
+#previewpane.debug {height:50%;}
+#previewpane2 {display:none;position:fixed;bottom:0px;right:0px;width:290px;height:50%;border-left:3px solid #111;box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);overflow:auto;}
+#previewpane2.debug {display:block;}
+#previewpane h3 {position:relative;padding:10px;line-height:1.5em;background-color:#F5F5F5;border-bottom: 1px solid #EEEEEE;z-index:1000;}
+#previewpane h4, #previewpane2 h4 {position:relative;padding:5px 10px;line-height:1em;background-color:#F5F5F5;border-bottom: 1px solid #EEEEEE;box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);z-index:800;}
+#previewpane .content, #previewpane2 .content {position:absolute;top:0px;left:0px;right:0px;bottom:0px;overflow:auto;padding:10px;}
+tr:nth-child(odd)    { background-color:#eee; }
+tr:nth-child(even)    { background-color:#fff; }
+tr.active   { background-color: #ddd; }
+input[type="checkbox"] { margin-left: 1em; }
+label { width: auto; display: inline; float: none; }

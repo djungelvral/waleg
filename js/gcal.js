@@ -1,5 +1,5 @@
 // load the Google data JS Client Library
-google.load("gdata", "2.x", {packages: ["calendar"]});
+google.load("gdata", "2.x", {packages: ["calendar","batch"]});
 
 // Constants used as element IDs in the DOM
 var DEFAULT_PANE = "default-pane";
@@ -71,12 +71,59 @@ var oCal = function() {
     var myService;
     var updater = {};
 
-    var calendarID = 'jo3k2rkstlil6nl37nkd5s137o@group.calendar.google.com'; // = 'default'
-    var feedUri = 'https://www.google.com/calendar/feeds/'+calendarID+'/private/full';
+    this.calendarID = "";// = '8n7sdnclpb24cullln953kjmsk@group.calendar.google.com'; // = 'default'
+    var feedUri;// = 'https://www.google.com/calendar/feeds/'+calendarID+'/private/full';
 
     // function setupMyService() {
         myService = new google.gdata.calendar.CalendarService("wa-leg-cal-parse");
     // }
+	this.addCalendar = function(title, success, failure) {
+		var _feedUri = 'https://www.google.com/calendar/feeds/default/owncalendars/full';
+		// Create an instance of CalendarEntry, representing the new calendar
+		this.entry = new google.gdata.calendar.CalendarEntry();
+		// Set the calendar title
+		this.entry.setTitle(google.gdata.atom.Text.create(title));
+		// Set the calendar summary
+		var summary = new google.gdata.atom.Text();
+		summary.setText('This is a calendar created by wa-leg-cal-parse');
+		this.entry.setSummary(summary);
+		// Set the calendar timezone
+		var timeZone = new google.gdata.calendar.TimeZoneProperty();
+		timeZone.setValue('America/Los_Angeles');
+		this.entry.setTimeZone(timeZone);
+		// Set the calendar location
+		var where = new google.gdata.Where();
+		where.setLabel('Olympia, WA');
+		where.setValueString('Olympia, WA');
+		this.entry.addLocation(where);
+		// Set the calendar to be visible in the Google Calendar UI
+		var hidden = new google.gdata.calendar.HiddenProperty();
+		hidden.setValue(false);
+		this.entry.setHidden(hidden);
+		// The callback method that will be called after a successful
+		// insertion from insertEntry()
+		self = this;
+		var callback = function(result) {
+			self.entry = result.entry;
+			self.calendarID = decodeURIComponent(self.entry.getId().getValue()).match(/\/([^\/]+$)/)[1];
+			feedUri = 'https://www.google.com/calendar/feeds/'+self.calendarID+'/private/full';
+			(typeof success === 'undefined') || success(result);
+			console.log('calendar created!');
+		}
+		// Error handler will be invoked if there is an error from insertEntry()
+		var handleError = function(e) {
+			console.log("Error creating calendar: "+(e.cause ? e.cause.statusText : e.message));
+		}
+		// Submit the request using the calendar service object
+		myService.insertEntry(_feedUri, this.entry, callback, handleError, google.gdata.calendar.CalendarEntry);
+	};
+	
+	this.deleteCalendar = function() {
+		self = this;
+		this.entry.deleteEntry(function(){
+			self.calendarID = "";
+		});
+	}
 
     //startdate and enddate need to be formatted in ISO = "2007-09-23T18:00:00.000Z"
     function createEvent(startdate, enddate, subject, summary, location) {
@@ -131,11 +178,22 @@ var oCal = function() {
     }
 
     function handleError(e) {
-        console.log('Error: ' + (e.cause ? e.cause.statusText : e.message));
+        console.log('Calendar Error: ' + (e.cause ? e.cause.statusText : e.message));
         // saveEvent(eid);
     }
 
-    this.addEvent = function(startdate, enddate, subject, summary, location) {
+    this.addEvent = function(startdate, enddate, subject, summary, location, success, failure) {
+        console.log('Attempting to store event '+subject);
+	    var callback = function(result) {
+	        console.log('Calendar updated with event '+result.entry.getTitle().getText());
+			(typeof success === 'undefined') || success(result);
+	        // saveEvent(result.entry.getSelfLink().getHref());
+	    }
+	    function handleError(e) {
+	        console.log('Calendar Error: ' + (e.cause ? e.cause.statusText : e.message));
+			(typeof failure === 'undefined') || failure(e);
+	        // saveEvent(eid);
+	    }
         var newEntry = createEvent(startdate, enddate, subject, summary, location);
         // setupMyService('add');
         myService.insertEntry(feedUri, newEntry, callback, handleError, google.gdata.calendar.CalendarEventEntry);
