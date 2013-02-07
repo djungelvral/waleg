@@ -4,7 +4,8 @@ header('Content-type: text/html');
 
 // Website url to open
 $daurl = $_GET["url"];
-$testurl = "http://listserv.wa.gov/cgi-bin/wa";
+$testurl = "http://content.govdelivery.com/";
+// $testurl = "http://listserv.wa.gov/cgi-bin/wa";
 
 if(substr($daurl, 0, strlen($testurl))===$testurl) {
     // Get that website's content

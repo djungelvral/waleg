@@ -53,7 +53,7 @@ $(document).ready(function() {
         $('div#container').before('<p id="loading" style="margin:1em 0;">Loading <img src="images/loading.gif" alt="spinner" style="vertical-align:top;"></p>');
 		var proxyurl = proxify($('#urlinput').val());
 		// var proxyurl = 'wa.html';
-        $('div#container').load(proxyurl, function() {
+        $('div#container').load(proxyurl+' #bulletin_body', function(response, status, xhr) {
             // console.log(proxify($('#urlinput').val()));
             // Remove header saying Content-Type: text/html
             $(this).contents().eq(0).filter(function() { return this.nodeType == 3 && this.nodeValue.search(/^Content-Type/i) >= 0; }).remove();
@@ -213,43 +213,21 @@ $(document).ready(function() {
             });
             // Add button to submit checked events to calendar
             $('#add-to-ical').click(function(){
-				var ical = new icalendar.iCalendar();
-				ical.addProperty('METHOD','PUBLISH');
-				ical.addProperty('CALSCALE','GREGORIAN');
-				ical.addProperty('X-WR-TIMEZONE','America/Los_Angeles');
-				var tz = new icalendar.VTimezone(null, 'America/Los_Angeles');
-				ical.addComponent(tz);
-				var dst = tz.addComponent('DAYLIGHT');
-				dst.addProperty('DTSTART', new Date(2007,2,11,2,0,0));
-				dst.addProperty('RRULE', new icalendar.RRule({FREQ: 'YEARLY', BYMONTH: 3, BYDAY: '2SU'}));
-				dst.addProperty('TZOFFSETFROM', -800);
-				dst.addProperty('TZOFFSETTO', -700);
-				dst.addProperty('TZNAME', 'PDT');
-				var std = tz.addComponent('STANDARD');
-				std.addProperty('DTSTART', new Date(2007,10,4,2,0,0));
-				std.addProperty('RRULE', new icalendar.RRule({FREQ: 'YEARLY', BYMONTH: 11, BYDAY: '1SU'}));
-				std.addProperty('TZOFFSETFROM', -700);
-				std.addProperty('TZOFFSETTO', -800);
-				std.addProperty('TZNAME', 'PST');
-				// var tz = ical.addComponent('VTIMEZONE');
-				var now = new Date();
+                var caltitle = "WA-LEG Schedule";
+                var ICSevents = new Array();
                 // Get list of checked events
                 $timetable.find("input[name='event']:checked").each(function(){
                     var i = $(this).val();
-					var event = ical.addComponent('VEVENT');
-					event.setDate(new Date(events[i].startdate), new Date(events[i].enddate), 'America/Los_Angeles');
-					event.addProperty('DTSTAMP',now);
-					event.addProperty('UID',now.getTime().toString()+Math.random().toString()+"@wa-leg-schedule-app.com");
-					if(events[i].details) event.setDescription(events[i].details);
-					event.setSummary(events[i].title);
-					if(events[i].location) event.setLocation(events[i].location);
-                    // myCalendar.addEvent(events[i].startdate, events[i].enddate, events[i].title, events[i].details, events[i].location);
+					var e = createICSEvent(events[i]);
+					// Add to the stack
+					ICSevents.push(e);
                 });
+                var ICSstr = createICSCalendar(caltitle,ICSevents);
 				// Download file using data URI
 				$('#download-ical').remove(); // Delete existing link if present
-                $('<a id="download-ical" class="button-action-link" type="text/calendar" target="_blank">Download iCal file</a>').attr('href','data:text/calendar;charset=UTF-8,'+ical.toString()).insertAfter('#add-to-ical');
+                $('<a id="download-ical" class="button-action-link" type="text/calendar" target="_blank">Download iCal file</a>').attr('href','data:text/calendar;charset=UTF-8,'+escape(ICSstr)).insertAfter('#add-to-ical');
 				// window.location.href='data:text/calendar;charset=UTF-8,'+ical.toString();
-				// console.log(decodeURIComponent(ical));
+                console.log(decodeURIComponent(ICSstr));
 				// window.open('data:text/plain;charset=UTF-8,'+ical.toString(),'_blank','height=1200,width=1200');
             });
             // Add button to make events global
@@ -272,52 +250,52 @@ $(document).ready(function() {
     }
 	$('#urlsubmit').click(loadMessage);
     // Initialise calendar functionality
-    cal_init();
+    // cal_init();
 	// Get archive page and parse list of months
 	$('#breadcrumb-archive > a').empty().html('WA-LEG-ARCHIVE <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
-	$('<div/>').load(proxify('/cgi-bin/wa?A0=waleg-schedule'), function(){
-		// var $ul = $(this).find('ul').eq(0);
-		var $ul = $('#breadcrumb-archive-list').empty();
-		// Copy all the month elements into the menu
-		$(this).find('ul').eq(0).children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') >= 0; }).appendTo($ul)
-		// $('#breadcrumb-archive-list').append($ul.children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') < 0; }));
-		// remove non month list elements
-		// $ul.children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') < 0; }).remove();
-		// remove links on text in each element
-		// $ul.children().each(function(){ $(this).text($(this).children('a').text()); });
-		// $ul.addClass('unstyled').appendTo('#breadcrumb-archive');
-		$('#breadcrumb-archive > a > img').remove();
-		// When we click on a month, load the page, parse it, and show the messages available for that month
-		$ul.children('li').click(function(){
-			var monthname = $(this).children('a').text();
-			var monthurl = $(this).children('a').attr('href');
-			$('#breadcrumb-month > a').empty().html(monthname+' <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
-			$('#breadcrumb-month').css('display','inline');
-			$('#breadcrumb-message').hide();
-			$('<div/>').load(proxify(monthurl)+' p.archive', function(){
-				var $ul2 = $('#breadcrumb-month-list').empty();
-				$(this).find('a').filter(function(){ return $(this).attr('href').search('A2=ind') >= 0; }).appendTo($ul2).wrap('<li></li>');
-				$('#breadcrumb-month > a > img').remove();
-				// When we click on a message, put its url in the box and load it
-				$ul2.children('li').click(function(){
-					var messagename = $(this).children('a').text();
-					var messageurl = $(this).children('a').attr('href');
-					$('#breadcrumb-message > a').empty().html(messagename+' <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
-					$('#breadcrumb-message').css('display','inline');
-					// Load message page, retrieve text/html link, and load the message
-					$('<div/>').load(proxify(messageurl)+' a[href]', function(){
-						$(this).children().each(function(){if($(this).text().search('text/html')>=0){messageurl=$(this).attr('href');}});
-						$('#urlinput').val(baseurl+messageurl);
-						loadMessage();
-					});
-					// Prevent link from working
-					return false;
-				});
-			});
-			// Prevent link from working
-			return false;
-		});
-	});
+    // $('<div/>').load(proxify('/cgi-bin/wa?A0=waleg-schedule'), function() {
+	//         // var $ul = $(this).find('ul').eq(0);
+	//         var $ul = $('#breadcrumb-archive-list').empty();
+	//         // Copy all the month elements into the menu
+	//         $(this).find('ul').eq(0).children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') >= 0; }).appendTo($ul)
+	//         // $('#breadcrumb-archive-list').append($ul.children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') < 0; }));
+	//         // remove non month list elements
+	//         // $ul.children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') < 0; }).remove();
+	//         // remove links on text in each element
+	//         // $ul.children().each(function(){ $(this).text($(this).children('a').text()); });
+	//         // $ul.addClass('unstyled').appendTo('#breadcrumb-archive');
+	//         $('#breadcrumb-archive > a > img').remove();
+	//         // When we click on a month, load the page, parse it, and show the messages available for that month
+	//         $ul.children('li').click(function(){
+	//             var monthname = $(this).children('a').text();
+	//             var monthurl = $(this).children('a').attr('href');
+	//             $('#breadcrumb-month > a').empty().html(monthname+' <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
+	//             $('#breadcrumb-month').css('display','inline');
+	//             $('#breadcrumb-message').hide();
+	//             $('<div/>').load(proxify(monthurl)+' p.archive', function(){
+	//                 var $ul2 = $('#breadcrumb-month-list').empty();
+	//                 $(this).find('a').filter(function(){ return $(this).attr('href').search('A2=ind') >= 0; }).appendTo($ul2).wrap('<li></li>');
+	//                 $('#breadcrumb-month > a > img').remove();
+	//                 // When we click on a message, put its url in the box and load it
+	//                 $ul2.children('li').click(function(){
+	//                     var messagename = $(this).children('a').text();
+	//                     var messageurl = $(this).children('a').attr('href');
+	//                     $('#breadcrumb-message > a').empty().html(messagename+' <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
+	//                     $('#breadcrumb-message').css('display','inline');
+	//                     // Load message page, retrieve text/html link, and load the message
+	//                     $('<div/>').load(proxify(messageurl)+' a[href]', function(){
+	//                         $(this).children().each(function(){if($(this).text().search('text/html')>=0){messageurl=$(this).attr('href');}});
+	//                         $('#urlinput').val(baseurl+messageurl);
+	//                         loadMessage();
+	//                     });
+	//                     // Prevent link from working
+	//                     return false;
+	//                 });
+	//             });
+	//             // Prevent link from working
+	//             return false;
+	//         });
+	//     });
 	// dropdown menu for breadcrumb
 	$('#topbar .breadcrumb > li').hover(function() {
 		$(this).children('ul').show();

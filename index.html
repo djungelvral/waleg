@@ -5,16 +5,19 @@
     <title>Calendar Parser</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/legislature.css">
-    <script type="text/javascript" src="http://www.google.com/jsapi?key=AIzaSyC9lKLqnXY1LvMiwM-TY-irkN91O-msSHk"></script>
-    <script type="text/javascript" src="js/gcal.js" charset="utf-8"></script>
-    <script type="text/javascript" src="js/jquery-1.7.1.min.js" charset="utf-8"></script>
+    <!-- <script type="text/javascript" src="http://www.google.com/jsapi?key=AIzaSyC9lKLqnXY1LvMiwM-TY-irkN91O-msSHk"></script> -->
+    <!-- <script type="text/javascript" src="js/gcal2.js" charset="utf-8"></script> -->
+    <!-- <script type="text/javascript" src="js/jquery-1.7.1.min.js" charset="utf-8"></script> -->
+    <!-- <script src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script> -->
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
     <!-- <script type="text/javascript" src="js/require.js" charset="utf-8"></script> -->
     <!-- <script type="text/javascript" src="js/turing-test.js" charset="utf-8"></script> -->
-	<script type="text/javascript" src="js/coffee-script.js" charset="utf-8"></script>
-    <script type="text/javascript" src="js/recur.js" charset="utf-8"></script>
-    <script type="text/javascript" src="js/types.js" charset="utf-8"></script>
+	<!-- <script type="text/javascript" src="js/coffee-script.js" charset="utf-8"></script> -->
+    <!-- <script type="text/javascript" src="js/recur.js" charset="utf-8"></script> -->
+    <!-- <script type="text/javascript" src="js/types.js" charset="utf-8"></script> -->
     <!-- <script type="text/javascript" src="js/parser.js" charset="utf-8"></script> -->
-    <script type="text/coffeescript" src="coffee/icalendar.coffee" charset="utf-8"></script>
+    <!-- <script type="text/coffeescript" src="coffee/icalendar.coffee" charset="utf-8"></script> -->
+    <script type="text/javascript" src="js/ical.js" charset="utf-8"></script>
     <script type="text/javascript" src="js/legislature.js" charset="utf-8"></script>
 </head>
 <body>
@@ -27,7 +30,7 @@
 		    </ul>
 			<form>
             <p id="urlinput-p" class="input-append clearfix">
-				<input name="urlinput" id="urlinput" value="http://listserv.wa.gov">
+				<input name="urlinput" id="urlinput" value="http://content.govdelivery.com/bulletins/gd/WALEG-6894f4">
 				<span class="add-on btn" id="urlsubmit">Load Message</span>
 			</p>
             <p>
@@ -35,7 +38,7 @@
                 <span class="btnbox"><input class="btn" type="button" name="add-to-text" id="add-to-text" value="Create Text File for Checked Events" disabled="disabled"></span>
                 <span class="btnbox"><input class="btn authenticated-pane" type="button" name="add-to-google" id="add-to-google" value="Add Checked Events to Google Calendar" disabled="disabled"></span>
                 <input class="btn authenticated-pane" id="logout-button" type="button" value="Logout Google Calendar" onclick="logMeOut()">
-				<input class="btn default-pane" id="auth-button" type="button" value="Login Google Calendar" onclick="logMeIn()">
+				<input class="btn default-pane" id="auth-button" type="button" value="Login Google Calendar">
             </p>
 			</form>
         </div>
