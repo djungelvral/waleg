@@ -194,4 +194,12 @@ $(document).ready(function() {
         });
     }
 	$('#urlsubmit').click(loadMessage);
+    $('#urlinput').bind('keypress',function(event)
+    {
+          if(event.keyCode === 13)
+          {
+              $('#urlsubmit').click();
+              return false;
+          }
+    });
 });
