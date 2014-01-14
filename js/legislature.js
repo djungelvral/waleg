@@ -1,6 +1,5 @@
 $(document).ready(function() {
-    var debug = true;
-	var baseurl = 'http://listserv.wa.gov';
+    var debug = false;
     if(debug){$('#previewpane,#previewpane2').addClass('debug');}
     var letterbullets = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
     function ol2txt(obj,level,ndx,str) {
@@ -42,11 +41,9 @@ $(document).ready(function() {
         if(mins.length==1){mins="0"+mins;}
         return d_names[d.getDay()]+" "+m_names[d.getMonth()]+" "+d.getDate()+" "+d.getFullYear()+" at "+hrs+":"+mins+ampm;
     }
-    function proxify(str) { if(str.search(/^http:/)<0) {str=baseurl+str;} return ("proxy.php?url="+encodeURIComponent(str)); }
+    function proxify(str) { return ("proxy.php?url="+encodeURIComponent(str)); }
     $("#urlinput").click(function(){ $(this).select(); return false; });
-    $('#add-to-google').attr('disabled', 'disabled');
-    $('#add-to-ical').attr('disabled', 'disabled');
-    $('#add-to-text').attr('disabled', 'disabled');
+    $('#add-to-ical').prop('disabled', true);
 	function loadMessage() {
 		$('.button-action-link').remove();
         $('div#container').hide();
@@ -63,16 +60,7 @@ $(document).ready(function() {
             var $timetable = $('a[name="top"]').siblings('table').eq(0);
             var events = window.events = new Array;
             var startdate, enddate, datestr, timestr;
-            $('h1').eq(0).append('<span><label for="all-events"><strong>Select / de-select all:</strong> </label><input type="checkbox" id="all-events" value="all" checked="checked"></span>');
-            // $timetable.children('tbody').prepend('<tr id="selectall"><th colspan="2"></th><th style="text-align:right;">Select / de-select all:</th><th><input type="checkbox" id="all-events" value="all"></th></tr>');
-            $('#all-events').click(function(){
-                var $checkboxes = $("input[name='event'],input[name='day']");
-                if($(this).attr("checked")) {
-                    $checkboxes.attr("checked","checked");
-                } else {
-                    $checkboxes.removeAttr("checked");
-                }
-            });
+
             var $rows = $timetable.find('tr');
             $rows.each(function(rownum){
                 var $row = $(this);
@@ -95,11 +83,7 @@ $(document).ready(function() {
                     $row.find('input').click(function(){
                         var checkboxdate = $row.attr('data-date');
                         var $checkboxes = $("tr[data-date='"+checkboxdate+"'] input[name='event']");
-                        if($(this).attr("checked")) {
-                            $checkboxes.attr("checked","checked");
-                        } else {
-                            $checkboxes.removeAttr("checked");
-                        }
+                        $checkboxes.prop("checked",$(this).prop("checked"));
                     });
                 } else {
                     // Get time if present
@@ -185,33 +169,6 @@ $(document).ready(function() {
                 $row.attr('data-date',datestr);
             });
             // Add button to submit checked events to calendar
-            $('#add-to-google').click(function(){
-				// Create new calendar, and on success add events to that calendar
-				myCalendar.addCalendar($('#breadcrumb-message > a').text(),function(){
-					// Create a stack to hold all the asynchronous api calls, which need to be blocking
-					var eventStack = [];
-                    // Get list of checked events
-                    $timetable.find("input[name='event']:checked").each(function(){
-                        var i = $(this).val();
-						function addfn(){
-							myCalendar.addEvent(ISODateString(events[i].startdate), ISODateString(events[i].enddate), events[i].title, events[i].details, events[i].location,
-								function(){if(eventStack.length>0) eventStack.pop().apply();},
-								function(e){$(events[i].row).css({'color':'red'});eventStack.push(addfn);});
-						};
-						// Add to the stack
-						eventStack.push(addfn);
-                    });
-					// Start things rolling...
-					eventStack.pop().apply();
-				});
-				$('#delete-google').remove(); // Delete existing link if present
-                $('<a id="delete-google" class="button-action-link" href="#">Delete the created calendar</a>').insertAfter('#add-to-google').click(function(){
-					myCalendar.deleteCalendar();
-					$('#delete-google').remove();
-					return false;
-				});
-            });
-            // Add button to submit checked events to calendar
             $('#add-to-ical').click(function(){
                 var caltitle = "WA-LEG Schedule";
                 var ICSevents = new Array();
@@ -226,83 +183,15 @@ $(document).ready(function() {
 				// Download file using data URI
 				$('#download-ical').remove(); // Delete existing link if present
                 $('<a id="download-ical" class="button-action-link" type="text/calendar" target="_blank">Download iCal file</a>').attr('href','data:text/calendar;charset=UTF-8,'+escape(ICSstr)).insertAfter('#add-to-ical');
-				// window.location.href='data:text/calendar;charset=UTF-8,'+ical.toString();
-                console.log(decodeURIComponent(ICSstr));
-				// window.open('data:text/plain;charset=UTF-8,'+ical.toString(),'_blank','height=1200,width=1200');
+                if(debug)
+                {
+                    console.log(decodeURIComponent(ICSstr));
+                }
             });
-            // Add button to make events global
-			$('#add-to-text').click(function(){
-				$('#download-text').remove(); // Delete existing link if present
-                $('<a id="download-text" class="button-action-link" type="text/plain" target="_blank">Download text file</a>')
-					.attr('href','data:text/plain;charset=UTF-8,'+encodeURIComponent($(events).map(function(){
-							return this.title+"\n"+(new Array(this.title.length+1)).join("-")+"\n"+formatDate(new Date(this.startdate))+(this.location ? " in "+this.location : "")+
-							(this.details ? "\n\n"+this.details : "");
-						}).toArray().join("\n\n===========================================================\n\n")))
-					.insertAfter('#add-to-text');
-			});
-            $('#add-to-google').removeAttr('disabled');
-            $('#add-to-ical').removeAttr('disabled');
-            $('#add-to-text').removeAttr('disabled');
+            $('#add-to-ical').prop("disabled",false);
             $('#loading').remove();
             $('div#container').fadeIn('slow');
-			$('#breadcrumb-message > a > img').remove();
         });
     }
 	$('#urlsubmit').click(loadMessage);
-    // Initialise calendar functionality
-    // cal_init();
-	// Get archive page and parse list of months
-	$('#breadcrumb-archive > a').empty().html('WA-LEG-ARCHIVE <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
-    // $('<div/>').load(proxify('/cgi-bin/wa?A0=waleg-schedule'), function() {
-	//         // var $ul = $(this).find('ul').eq(0);
-	//         var $ul = $('#breadcrumb-archive-list').empty();
-	//         // Copy all the month elements into the menu
-	//         $(this).find('ul').eq(0).children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') >= 0; }).appendTo($ul)
-	//         // $('#breadcrumb-archive-list').append($ul.children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') < 0; }));
-	//         // remove non month list elements
-	//         // $ul.children().filter(function(){ return $(this).children('a').attr('href').search('A1=ind') < 0; }).remove();
-	//         // remove links on text in each element
-	//         // $ul.children().each(function(){ $(this).text($(this).children('a').text()); });
-	//         // $ul.addClass('unstyled').appendTo('#breadcrumb-archive');
-	//         $('#breadcrumb-archive > a > img').remove();
-	//         // When we click on a month, load the page, parse it, and show the messages available for that month
-	//         $ul.children('li').click(function(){
-	//             var monthname = $(this).children('a').text();
-	//             var monthurl = $(this).children('a').attr('href');
-	//             $('#breadcrumb-month > a').empty().html(monthname+' <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
-	//             $('#breadcrumb-month').css('display','inline');
-	//             $('#breadcrumb-message').hide();
-	//             $('<div/>').load(proxify(monthurl)+' p.archive', function(){
-	//                 var $ul2 = $('#breadcrumb-month-list').empty();
-	//                 $(this).find('a').filter(function(){ return $(this).attr('href').search('A2=ind') >= 0; }).appendTo($ul2).wrap('<li></li>');
-	//                 $('#breadcrumb-month > a > img').remove();
-	//                 // When we click on a message, put its url in the box and load it
-	//                 $ul2.children('li').click(function(){
-	//                     var messagename = $(this).children('a').text();
-	//                     var messageurl = $(this).children('a').attr('href');
-	//                     $('#breadcrumb-message > a').empty().html(messagename+' <img src="images/loading.gif" alt="spinner" style="vertical-align:top;">');
-	//                     $('#breadcrumb-message').css('display','inline');
-	//                     // Load message page, retrieve text/html link, and load the message
-	//                     $('<div/>').load(proxify(messageurl)+' a[href]', function(){
-	//                         $(this).children().each(function(){if($(this).text().search('text/html')>=0){messageurl=$(this).attr('href');}});
-	//                         $('#urlinput').val(baseurl+messageurl);
-	//                         loadMessage();
-	//                     });
-	//                     // Prevent link from working
-	//                     return false;
-	//                 });
-	//             });
-	//             // Prevent link from working
-	//             return false;
-	//         });
-	//     });
-	// dropdown menu for breadcrumb
-	$('#topbar .breadcrumb > li').hover(function() {
-		$(this).children('ul').show();
-	}, function() {
-		$(this).children('ul').hide();
-	});
-    // For now, automatically trigger the click
-	// $('#urlinput').val('http://listserv.wa.gov/cgi-bin/wa?A3=ind1201&L=WALEG-SCHEDULE&E=base64&P=426505&B=----boundary_0_f3271c78-7a10-4d2a-af95-7bfb0cee5ff9&T=text%2Fhtml;%20charset=utf-8&XSS=3');
-    // $('#urlsubmit').click();
 });

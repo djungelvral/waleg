@@ -31,7 +31,7 @@ function ISOLocalDateString(d)
 
 function wrap(str)
 {
-    var MAX_LINE = 75;
+    var MAX_LINE = 74;
     // var data = new Buffer(str);
     // var pos = 0, len;
     // var output = [];
