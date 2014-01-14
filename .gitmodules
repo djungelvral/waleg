@@ -1,6 +1,0 @@
-[submodule "ext/turing-test.js"]
-	path = ext/turing-test.js
-	url = git://github.com/alexyoung/turing-test.js.git
-[submodule "ext/node-icalendar"]
-    path = ext/node-icalendar
-    url = git://github.com/tritech/node-icalendar.git
