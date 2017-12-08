@@ -52,7 +52,8 @@ $(document).ready(function () {
         // var proxyurl = 'wa.html';
         $.getJSON('http://www.whateverorigin.org/get?url=' + encodeURIComponent($('#urlinput').val()) + '&callback=?', function (data) {
             // 	$.getJSON('http://anyorigin.com/go?url=https%3A//content.govdelivery.com/accounts/WALEG/bulletins/189053b&callback=?', function(data){
-            $('div#container').html(data.contents);
+            // $('div#container').before('<div id="preload" style="visibility: none;"></div>');
+            $('div#container').html($(data.contents).find('#bulletin_body'));
             $('div#container').filter(function () { //.load(proxyurl+' #bulletin_body', function(response, status, xhr) {
                 // console.log(proxify($('#urlinput').val()));
                 // Remove header saying Content-Type: text/html
