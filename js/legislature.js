@@ -41,16 +41,20 @@ $(document).ready(function() {
         if(mins.length==1){mins="0"+mins;}
         return d_names[d.getDay()]+" "+m_names[d.getMonth()]+" "+d.getDate()+" "+d.getFullYear()+" at "+hrs+":"+mins+ampm;
     }
-    function proxify(str) { return ("proxy.php?url="+encodeURIComponent(str)); }
+//     function proxify(str) { return ("proxy.php?url="+encodeURIComponent(str)); }
     $("#urlinput").click(function(){ $(this).select(); return false; });
     $('#add-to-ical').prop('disabled', true);
 	function loadMessage() {
 		$('.button-action-link').remove();
         $('div#container').hide();
         $('div#container').before('<p id="loading" style="margin:1em 0;">Loading <img src="images/loading.gif" alt="spinner" style="vertical-align:top;"></p>');
-		var proxyurl = proxify($('#urlinput').val());
+// 		var proxyurl = proxify($('#urlinput').val());
 		// var proxyurl = 'wa.html';
-        $('div#container').load(proxyurl+' #bulletin_body', function(response, status, xhr) {
+	$.getJSON('http://www.whateverorigin.org/get?url=' + encodeURIComponent($('#urlinput').val()) + '&callback=?', function(data){
+// 	$.getJSON('http://anyorigin.com/go?url=https%3A//content.govdelivery.com/accounts/WALEG/bulletins/189053b&callback=?', function(data){
+		$('div#container').html(data.contents);
+	});
+        $('div#container').filter(function() { //.load(proxyurl+' #bulletin_body', function(response, status, xhr) {
             // console.log(proxify($('#urlinput').val()));
             // Remove header saying Content-Type: text/html
             $(this).contents().eq(0).filter(function() { return this.nodeType == 3 && this.nodeValue.search(/^Content-Type/i) >= 0; }).remove();
